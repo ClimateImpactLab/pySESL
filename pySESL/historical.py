@@ -1,9 +1,9 @@
+from typing import Union
+
 import numpy as np
+import pandas as pd
 import xarray as xr
 from scipy.linalg import toeplitz
-import pandas as pd
-
-from typing import Union
 
 
 def calc_temp(

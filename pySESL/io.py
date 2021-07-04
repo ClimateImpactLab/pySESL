@@ -1,10 +1,10 @@
-from scipy.io import loadmat
-import pandas as pd
-import numpy as np
-import xarray as xr
 from pathlib import Path
+from typing import Sequence, Union
 
-from typing import Union, Sequence
+import numpy as np
+import pandas as pd
+import xarray as xr
+from scipy.io import loadmat
 
 
 def load_data_SESL(
