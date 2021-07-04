@@ -11,7 +11,6 @@ source_requirements = []
 
 setup(
     name="pySESL",
-    use_scm_version=True,
     author="Ian Bolliger",
     description="Semi-empirical Sea Level Estimator",
     author_email="ibolliger@rhg.com",
