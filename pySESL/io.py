@@ -90,7 +90,7 @@ def load_data_SESL(
         else:
             raise NotImplementedError
         if no_neg_cov:
-            C = np.minimum(C, 0)
+            C = np.maximum(C, 0)
 
     # rebase proxy SL data to base period
     proxy_sl["val"] -= proxy_sl.loc[baseperiod[0] : baseperiod[1], "val"].mean()
