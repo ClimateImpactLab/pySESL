@@ -10,6 +10,7 @@ def calc_temp(
     data: xr.Dataset,
     T_err: Union[str, None],
     T_num: int,
+    n_samples: int,
     tau_ar1: float = 10,
     random_state: Union[int, None] = 0,
 ) -> xr.DataArray:
@@ -29,6 +30,8 @@ def calc_temp(
             - ``no``: Don't add uncertainty
     T_num : int
         Number of simulated time series to create
+    n_samples : int
+        Number of draws of the parameter posteriors
     tau_ar1 : float, optional
         If ``T_err==ar1ts``, this is the ``timescale`` parameter. Otherwise, ignored.
     random_state : int, optional
@@ -51,11 +54,17 @@ def calc_temp(
             (np.expand_dims(yr_vec, 1) - np.expand_dims(yr_vec, 0)) / tau_ar1
         )
         cov_ar1 = err_sq * np.exp(yr_vec_neg_diff_norm)
-        sims = rng.multivariate_normal(T.sel(kind="val"), cov_ar1, size=T_num)
+        sims = rng.multivariate_normal(
+            T.sel(kind="val"), cov_ar1, size=(T_num, n_samples)
+        )
         return xr.DataArray(
             sims.T,
-            coords={"T_sim_id": np.arange(sims.shape[0]), "year": T.T_year.values},
-            dims=["year", "T_sim_id"],
+            coords={
+                "T_sim_id": np.arange(sims.shape[0]),
+                "year": T.T_year.values,
+                "sample": np.arange(n_samples),
+            },
+            dims=["year", "sample", "T_sim_id"],
         )
     else:
         raise NotImplementedError
@@ -114,7 +123,7 @@ def calc_T0(
         tau1_1 = tau1 / yrs1
         tau1_2 = tau1 / yrs2
         tau1_ = xr.concat([tau1_1, tau1_2], dim=pd.Index(["T0", "T"], name="T_type"))
-        G = (1 - 1 / tau1_) * xr.ones_like(T_sims.year) ** xr.DataArray(
+        G = ((1 - 1 / tau1_) * xr.ones_like(T_sims.year)) ** xr.DataArray(
             np.arange(n_yrs), dims=["year"]
         )
         G_M = xr.apply_ufunc(
