@@ -2,6 +2,10 @@
 History
 =======
 
+v0.2
+----
+* Add ``calc_sl`` function
+
 v0.1.2
 ------
 * Fix bug where historical data SL covariance matrix was top-coded at 0 instead of bottom-coded
