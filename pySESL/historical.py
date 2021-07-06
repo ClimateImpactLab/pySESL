@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Sequence
 
 import numpy as np
 import pandas as pd
@@ -78,7 +78,7 @@ def calc_T0(
     model: str,
     T0_period_end: int = -1800,
 ) -> xr.Dataset:
-    """Load historical temperature and sea level reconstructions
+    """Calculate draws of ``T0`` parameter from historical temperature draws.
 
     Parameters
     ----------
@@ -155,3 +155,94 @@ def calc_T0(
 
     T01 = xr.dot(G_M1, temp_1.rename(year="year2"), dims=["year2"])
     return T01
+
+
+def calc_sl(
+    T_sims: xr.DataArray,
+    T0_sims: xr.DataArray,
+    params: xr.Dataset,
+    model: str,
+    period: Sequence,
+    interp_method: str = "nearest",
+) -> tuple:
+    """Calculate draws of sea level and ``c`` parameter using historical temperature
+    draws.
+
+    Parameters
+    ----------
+    T_sims : :class:`xarray.Dataset`
+        Output of :func:`calc_temp`. Contains draws of historical temps.
+    T0_sims : :class:`xarray.Dataset`
+        Output of :func:`calc_T0`. Contains T0 associated with historical T draws.
+    params : :class:`xarray.Dataset`
+        Output of :func:`pySESL.io.load_params`. Contains posterior distributions of
+        trained SESL model parameters.
+    model : "CRdecay", "ConstRate", "CRovTau", "TwoTau", or "simpel"
+        Which model was used to train SESL model and generate ``params``.
+    period : length-2 array-like
+        Period of data to include in results
+    interp_method : str, optional
+        Interpolation method used to annualize ``T_sims`` and ``T0_sims`` variables.
+
+    Returns
+    -------
+    sea : :class:`xarray.DataArray`
+        Sea Level by year for each parameter sample X temperature reconstruction sample
+    dsea : :class:`xarray.DataArray`
+        Annual change in sea Level by year for each parameter sample X temperature
+        reconstruction sample
+    c : :class:`xarray.DataArray`
+        Value of ``c`` parameter by year for each parameter sample
+    T_sims, T0_sims : :class:`xarray.DataArray`
+        Same as the input ``T_sims`` and ``T0_sims`` but interpolated to annual values
+        using ``interp_method`` and clipped to range bounded by ``period`` and
+        ``calibperiod``
+    """
+
+    if model != "CRdecay":
+        raise NotImplementedError
+
+    T_sims, T0_sims = resize_T(period, T_sims, T0_sims, interp_method=interp_method)
+    g = 1 - 1 / params.tau_c
+    G = g ** xr.DataArray(
+        np.arange(T_sims.year.size), coords={"year": T_sims.year}, dims=["year"]
+    )
+    c = params.c * G
+    dsea = c + params.a * (T_sims - T0_sims)
+    sea = dsea.cumsum("year")
+
+    return sea, dsea, c, T_sims, T0_sims
+
+
+def resize_T(
+    period: Sequence, *das: xr.DataArray, interp_method: str = "nearest"
+) -> Sequence:
+    """Interpolate DataArrays of values at (potentially varying) time intervals to
+    annual time series, and clip them
+
+    Parameters
+    ---------
+    period : length-2 array-like
+        Starting and ending values for desired period of output DataArrays
+    interp_method : str, optional
+        Interpolation method to use to annualize inputs. Default is "nearest".
+
+    Returns
+    -------
+    tuple
+        Tuple of DataArrays of same length as ``das``, interpolated and clipped
+    """
+
+    fyr = max(das[0].year[0].item(), period[0])
+    lyr = period[1]
+
+    return list(
+        map(
+            lambda x: x.interp(
+                year=np.arange(fyr, lyr + 1),
+                method=interp_method,
+                kwargs={"fill_value": "extrapolate"},
+            ),
+            das,
+        )
+    )
