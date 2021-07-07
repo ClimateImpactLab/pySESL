@@ -2,6 +2,10 @@
 History
 =======
 
+v0.2.1
+------
+* Fix bug in ``resize_T`` function
+
 v0.2
 ----
 * Add ``calc_sl`` function
