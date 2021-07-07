@@ -1,4 +1,5 @@
-from typing import Union, Sequence
+from math import ceil, floor
+from typing import Sequence, Union
 
 import numpy as np
 import pandas as pd
@@ -66,8 +67,9 @@ def calc_temp(
             },
             dims=["year", "sample", "T_sim_id"],
         )
-    else:
-        raise NotImplementedError
+    elif T_err == "no":
+        return data.T.sel(kind="val").rename(T_year="year")
+    raise NotImplementedError
 
 
 def calc_T0(
@@ -233,13 +235,24 @@ def resize_T(
         Tuple of DataArrays of same length as ``das``, interpolated and clipped
     """
 
-    fyr = max(das[0].year[0].item(), period[0])
+    da = das[0]
+
+    fyr = max(da.year[0].item(), period[0])
     lyr = period[1]
+
+    out_range = da.year.isel(year=(da.year >= fyr) & (da.year <= lyr))
+    diffs = out_range.diff("year")
+    yrs_st = diffs[0]
+    yrs_end = diffs[-1]
+    yrs_out = np.arange(
+        out_range[0] - floor((yrs_st - 1) / 2),
+        out_range[-1] + ceil((yrs_end - 1) / 2) + 1,
+    )
 
     return list(
         map(
             lambda x: x.interp(
-                year=np.arange(fyr, lyr + 1),
+                year=yrs_out,
                 method=interp_method,
                 kwargs={"fill_value": "extrapolate"},
             ),
