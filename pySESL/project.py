@@ -102,7 +102,7 @@ def get_ics(n_fair_sims, sesl_trained_params, sesl_hyperparams, sesl_input_dir):
 
 
 def bias_correct_temps_and_resample_ics(
-    temps, bc_period, ics, sesl_trained_params, sesl_hyperparams, first_year=None
+    temps, bc_period, ics, sesl_trained_params, first_year=None
 ):
     """Bias correct a temperature dataset such that it matches with the reference period
     used to calculate the T0_2000 initial condition. Also, resample ICs such that they
