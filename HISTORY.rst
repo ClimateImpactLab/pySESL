@@ -2,6 +2,10 @@
 History
 =======
 
+v0.3.1
+------
+* Remove unnecessary arg from ``bias_correct_temps_and_resample_ics``
+
 v0.3.0
 ------
 * Add ``project`` module with limited functionality.
