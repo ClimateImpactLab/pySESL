@@ -2,6 +2,10 @@
 History
 =======
 
+v0.3.0
+------
+* Add ``project`` module with limited functionality.
+
 v0.2.1
 ------
 * Fix bug in ``resize_T`` function
