@@ -2,6 +2,10 @@
 History
 =======
 
+v0.4.0
+------
+* Separate out ``resample_ics`` and ``bias_correct_temps`` into two functions.
+
 v0.3.1
 ------
 * Remove unnecessary arg from ``bias_correct_temps_and_resample_ics``

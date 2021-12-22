@@ -101,26 +101,20 @@ def get_ics(n_fair_sims, sesl_trained_params, sesl_hyperparams, sesl_input_dir):
     return xr.Dataset({"T0_2000": T0_2000, "c_2000": c_2000, "T_ref": T_ref})
 
 
-def bias_correct_temps_and_resample_ics(
-    temps, bc_period, ics, sesl_trained_params, first_year=None
-):
+def resample_ics(ics, sim_ids, sesl_trained_params):
     """Bias correct a temperature dataset such that it matches with the reference period
-    used to calculate the T0_2000 initial condition. Also, resample ICs such that they
-    have the same number of samples as are in the temperature projections ``temps``.
+    used to calculate the T0_2000 initial condition.
 
     TODO: finish docstring
     """
     # get T0_2000, T_ref in index of FAIR samples
     def resample_full(ds):
         return ds.stack(simulation=["T_sim_id", "sample", "T_data"]).isel(
-            simulation=slice(None, len(temps.simulation))
+            simulation=slice(None, len(sim_ids))
         )
 
     T0_2000, T_ref = list(map(resample_full, [ics.T0_2000, ics.T_ref]))
     assert (T0_2000.simulation == T_ref.simulation).all()
-
-    # new_T_data = T0_2000.T_data.str[:3]
-    # new_T_data = new_T_data.where(sesl_p["T_data"] == "Mar", "Mn")
 
     # get the appropriate parameters for each of the 3k sims
     def resample_partial(ds):
@@ -130,21 +124,25 @@ def bias_correct_temps_and_resample_ics(
                 names=["sample", "T_data"],
             )
         )
-        out["simulation"] = temps.simulation
+        out["simulation"] = sim_ids
         return out
 
     param_sims, c_2000 = list(map(resample_partial, [sesl_trained_params, ics.c_2000]))
-    T0_2000["simulation"] = temps.simulation
-    T_ref["simulation"] = temps.simulation
+    T0_2000["simulation"] = sim_ids
+    T_ref["simulation"] = sim_ids
     out_params = xr.merge((T0_2000, c_2000, T_ref, param_sims))
+    return out_params
 
-    # Get temps in units of reconstruction data (to match T0) and bias correct to the 2
-    # draws of reconstructed T over the reference period
-    out_temps = (temps - temps.sel(year=slice(*bc_period)).mean("year") + T_ref).sel(
+
+def bias_correct_temps(temps, bc_period, T_ref, first_year=None):
+    """Resample ICs such that they have the same number of samples as are in the
+    temperature projections ``temps``.
+
+    TODO: finish docstring
+    """
+    return (temps - temps.sel(year=slice(*bc_period)).mean("year") + T_ref).sel(
         year=slice(first_year, None)
     )
-
-    return out_temps, out_params
 
 
 def project_sesl(temps, params):
