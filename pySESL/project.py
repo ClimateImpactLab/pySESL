@@ -152,7 +152,6 @@ def project_sesl(temps, params):
 
     TODO: finish docstring
     """
-
     temp_arr = temps.copy()
     sl = 0 * temp_arr
 
