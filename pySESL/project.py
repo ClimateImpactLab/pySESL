@@ -133,7 +133,7 @@ def resample_ics(ics, sim_ids, sesl_trained_params):
     out_params = xr.merge((T0_2000, c_2000, T_ref, param_sims))
     return out_params
 
-
+  
 def bias_correct_temps(temps, bc_period, T_ref, first_year=None):
     """Resample ICs such that they have the same number of samples as are in the
     temperature projections ``temps``.
