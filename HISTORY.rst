@@ -2,6 +2,10 @@
 History
 =======
 
+Current
+-------
+* Fix docstrings for resampling and bias correction of Temp for projection
+
 v0.4.0
 ------
 * Separate out ``resample_ics`` and ``bias_correct_temps`` into two functions.
